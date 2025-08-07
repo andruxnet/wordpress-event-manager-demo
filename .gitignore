@@ -1,0 +1,9 @@
+# Composer
+/vendor/
+composer.lock
+
+# OS and IDE files
+.vscode/
+.idea/
+.DS_Store
+.Trashes
