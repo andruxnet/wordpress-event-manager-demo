@@ -16,6 +16,9 @@
 
   require_once __DIR__ . '/vendor/autoload.php';
 
+  // define constants to be used throughout the plugin
+  define('ANDRUXNET_PLUGIN_PATH', plugin_dir_path(__FILE__));
+
   // initialize plugin
   add_Action('plugins_loaded', function() {
     \Andruxnet\EventManager\Plugin::getInstance()->init();

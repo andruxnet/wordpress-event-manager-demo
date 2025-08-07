@@ -11,6 +11,11 @@
   class Plugin
   {
     /**
+     * Plugin text domain for internationalization.
+     */
+    public const TEXT_DOMAIN = 'andruxnet-event-manager';
+
+    /**
      * Singleton instance of the plugin class.
      *
      * @var self|null
@@ -37,6 +42,123 @@
      */
     public function init(): void {
       // init hooks
+      add_action('init', [$this, 'registerPostType']);
+      add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
+      add_action('save_post_event', [$this, 'saveEventMeta'], 10, 3);
+    }
+
+    /**
+     * Registers custom post type and related taxonomies.
+     *
+     * @return void
+     */
+    public function registerPostType(): void {
+      // register the post type first
+      register_post_type('event', [
+        'labels' => [
+          'name' => __('Events', self::TEXT_DOMAIN),
+          'singular_name' => __('Event', self::TEXT_DOMAIN),
+          'add_new' => __('Add New Event', self::TEXT_DOMAIN),
+          'add_new_item' => __('Add New Event', self::TEXT_DOMAIN),
+          'edit_item' => __('Edit Event', self::TEXT_DOMAIN),
+          'new_item' => __('New Event', self::TEXT_DOMAIN),
+          'view_item' => __('View Event', self::TEXT_DOMAIN),
+          'search_items' => __('Search Events', self::TEXT_DOMAIN),
+          'not_found' => __('No events found', self::TEXT_DOMAIN),
+          'not_found_in_trash' => __('No events found in Trash', self::TEXT_DOMAIN),
+        ],
+        'description' => __('Create and manage events', self::TEXT_DOMAIN),
+        'public' => true,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'show_in_rest' => true,
+        'supports' => ['title', 'editor', 'thumbnail'],
+        'has_archive' => true,
+        'rewrite' => ['slug' => 'events'],
+      ]);
+
+      // then the taxonomy
+      register_taxonomy('event_category', 'event', [
+        'labels' => [
+          'name' => __('Categories', self::TEXT_DOMAIN),
+          'singular_name' => __('Category', self::TEXT_DOMAIN),
+          'add_new_item' => __('Add New Category', self::TEXT_DOMAIN),
+          'edit_item' => __('Edit Category', self::TEXT_DOMAIN),
+        ],
+        'hierarchical' => true,
+        'public' => true,
+        'show_ui' => true,
+        'show_admin_column' => true,
+        'show_in_rest' => true,
+        'rewrite' => ['slug' => 'event-category'],
+      ]);
+    }
+
+    /**
+     * Add meta boxes for the event post type.
+     *
+     * @return void
+     */
+    public function addMetaBoxes(): void {
+      add_meta_box(
+        'event_details',
+        __('Event Details', self::TEXT_DOMAIN),
+        [$this, 'renderEventDetailsMetaBox'],
+        'event',
+        'normal',
+        'high'
+      );
+    }
+
+    /**
+     * Render the event details meta box.
+     *
+     * @param \WP_Post $post The post object.
+     *
+     * @return void
+     */
+    public function renderEventDetailsMetaBox(\WP_Post $post): void {
+      // a nonce for security
+      wp_nonce_field('event-meta-box', 'event-meta-nonce');
+
+      // event data
+      $date = get_post_meta($post->ID, '_event_date', true);
+      $location = get_post_meta($post->ID, '_event_location', true);
+      $capacity = get_post_meta($post->ID, '_event_capacity', true);
+
+      // load data into the meta box template
+      include ANDRUXNET_PLUGIN_PATH . 'templates/admin/event-meta-box.php';
+    }
+
+    /**
+     * Save event meta when saving the event post.
+     *
+     * @param int      $post_id The post ID.
+     * @param \WP_Post $post    The post object.
+     * @param bool     $update  Whether this is an existing post being updated.
+     *
+     * @return void
+     */
+    public function saveEventMeta(int $post_id, \WP_Post $post, bool $update): void {
+      // security first
+      $is_nonce_set = isset($_POST['event-meta-nonce']);
+      $is_nonce_valid = wp_verify_nonce($_POST['event-meta-nonce'], 'event-meta-box');
+      if (!$is_nonce_set || !$is_nonce_valid) {
+        return;
+      }
+
+      // save event meta to the database
+      if (isset($_POST['event-date'])) {
+        update_post_meta($post_id, '_event_date', sanitize_text_field($_POST['event-date']));
+      }
+
+      if (isset($_POST['event-location'])) {
+        update_post_meta($post_id, '_event_location', sanitize_text_field($_POST['event-location']));
+      }
+
+      if (isset($_POST['event-capacity'])) {
+        update_post_meta($post_id, '_event_capacity', absint($_POST['event-capacity']));
+      }
     }
 
   }
