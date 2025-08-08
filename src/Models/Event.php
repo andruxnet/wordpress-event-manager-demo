@@ -27,7 +27,7 @@
     ) {}
 
     /**
-     * Return event instance as array.
+     * Return Event instance as array.
      *
      * @return array
      */

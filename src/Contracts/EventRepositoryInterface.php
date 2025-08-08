@@ -18,4 +18,13 @@
      */
     public function findById(int $id): ?Event;
 
+    /**
+     * Retrieve upcoming events.
+     *
+     * @param int $limit Maximum number of events to return.
+     *
+     * @return array
+     */
+    public function findUpcoming(int $limit = 10): array;
+
   }

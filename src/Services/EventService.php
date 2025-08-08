@@ -2,8 +2,7 @@
 
   namespace Andruxnet\EventManager\Services;
 
-  use Andruxnet\EventManager\Repositories\EventRepository;
-  use Andruxnet\EventManager\Models\Event;
+    use Andruxnet\EventManager\Models\Event;
   use Andruxnet\EventManager\Contracts\EventRepositoryInterface;
 
   /**
@@ -19,11 +18,18 @@
     ) {}
 
     /**
-     * Retrieve an Event instance by its post ID.
-     *
      * @throws \Exception
      */
     public function getEventForDisplay(int $id): ?Event {
-      return $this->eventRespository->findById($id) ?? null;
+      return $this->eventRespository->findById($id);
+    }
+
+    /**
+     * @param int $limit
+     *
+     * @return array
+     */
+    public function getUpcomingEventsForDisplay(int $limit): array {
+      return $this->eventRespository->findUpcoming($limit);
     }
   }

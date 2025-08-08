@@ -54,6 +54,7 @@
 
       // shortcodes
       add_shortcode('em_event', [$this, 'renderEventShortcode']);
+      add_shortcode('em_upcoming', [$this, 'renderUpcomingEventsShortcode']);
     }
 
     /**
@@ -176,11 +177,14 @@
      * @return void
      */
     public function enqueuePublicAssets(): void {
+      // we need dashicons in the front for event list template
+      wp_enqueue_style('dashicons');
+
       wp_enqueue_style(
         self::TEXT_DOMAIN . '-public',
         ANDRUXNET_PLUGIN_URL . 'assets/css/public.css',
         [],
-        '1.0.0'
+        uniqid()
       );
     }
 
@@ -224,4 +228,35 @@
       }
     }
 
+    /**
+     * Shortcode to display a list of upcoming events.
+     *
+     * @param mixed $attributes Shortcode attributes
+     *
+     * @return string
+     */
+    public function renderUpcomingEventsShortcode(mixed $attributes): string {
+      $attributes = shortcode_atts(
+        ['limit' => 10],
+        $attributes ?? []
+      );
+
+      try {
+        $service = new EventService(new EventRepository());
+        $events = $service->getUpcomingEventsForDisplay((int) $attributes['limit']);
+
+        // need to return the output instead of just echoing it
+        ob_start();
+        include ANDRUXNET_PLUGIN_PATH . 'templates/public/event-list.php';
+        return ob_get_clean();
+
+      } catch (\Exception $e) {
+        error_log('Event shortcode error: ' . $e->getMessage());
+
+        return sprintf(
+          '<p>%s</p>',
+          __('There was an error displaying this event.', self::TEXT_DOMAIN)
+        );
+      }
+    }
   }
