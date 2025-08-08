@@ -3,6 +3,7 @@
   namespace Andruxnet\EventManager;
 
   use Andruxnet\EventManager\Repositories\EventRepository;
+  use Andruxnet\EventManager\Services\EventService;
 
   /**
    * Main plugin class handling WordPress initialization.
@@ -205,8 +206,8 @@
       }
 
       try {
-        $repository = new EventRepository();
-        $event = $repository->findById((int) $attributes['id']);
+        $service = new EventService(new EventRepository());
+        $event = $service->getEventForDisplay((int) $attributes['id']);
 
         // need to return the output instead of just echoing it
         ob_start();

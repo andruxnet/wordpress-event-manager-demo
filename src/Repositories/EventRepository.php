@@ -3,11 +3,12 @@
   namespace Andruxnet\EventManager\Repositories;
 
   use Andruxnet\EventManager\Models\Event;
+  use Andruxnet\EventManager\Contracts\EventRepositoryInterface;
 
   /**
    * Event repository class to connect the Event model to WordPress data.
    */
-  class EventRepository
+  class EventRepository implements EventRepositoryInterface
   {
     /**
      * Retrieve an Event object using its post ID.
