@@ -2,6 +2,8 @@
 
   namespace Andruxnet\EventManager;
 
+  use Andruxnet\EventManager\Repositories\EventRepository;
+
   /**
    * Main plugin class handling WordPress initialization.
    *
@@ -45,6 +47,12 @@
       add_action('init', [$this, 'registerPostType']);
       add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
       add_action('save_post_event', [$this, 'saveEventMeta'], 10, 3);
+
+      // enqueues
+      add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
+
+      // shortcodes
+      add_shortcode('em_event', [$this, 'renderEventShortcode']);
     }
 
     /**
@@ -68,13 +76,13 @@
           'not_found_in_trash' => __('No events found in Trash', self::TEXT_DOMAIN),
         ],
         'description' => __('Create and manage events', self::TEXT_DOMAIN),
-        'public' => true,
+        'public' => false,
         'show_ui' => true,
         'show_in_menu' => true,
         'show_in_rest' => true,
         'supports' => ['title', 'editor', 'thumbnail'],
-        'has_archive' => true,
-        'rewrite' => ['slug' => 'events'],
+        'has_archive' => false,
+        'rewrite' => false,
       ]);
 
       // then the taxonomy
@@ -158,6 +166,60 @@
 
       if (isset($_POST['event-capacity'])) {
         update_post_meta($post_id, '_event_capacity', absint($_POST['event-capacity']));
+      }
+    }
+
+    /**
+     * Properly enqueue public assets.
+     *
+     * @return void
+     */
+    public function enqueuePublicAssets(): void {
+      wp_enqueue_style(
+        self::TEXT_DOMAIN . '-public',
+        ANDRUXNET_PLUGIN_URL . 'assets/css/public.css',
+        [],
+        '1.0.0'
+      );
+    }
+
+    /**
+     * Shortcode to display a single event.
+     *
+     * @param mixed $attributes Shortcode attributes
+     *
+     * @return string
+     */
+    public function renderEventShortcode(mixed $attributes): string {
+      $attributes = shortcode_atts(
+        ['id' => 0], // defaults to id 0, which will render as "not found"
+        $attributes ?? []
+      );
+
+      $event_id = (int) $attributes['id'];
+      if ($event_id === 0) {
+        return sprintf(
+          '<p>%s</p>',
+          __('Event not found.', self::TEXT_DOMAIN),
+        );
+      }
+
+      try {
+        $repository = new EventRepository();
+        $event = $repository->findById((int) $attributes['id']);
+
+        // need to return the output instead of just echoing it
+        ob_start();
+        include ANDRUXNET_PLUGIN_PATH . 'templates/public/single-event.php';
+        return ob_get_clean();
+
+      } catch (\Exception $e) {
+        error_log('Event shortcode error: ' . $e->getMessage());
+
+        return sprintf(
+          '<p>%s</p>',
+          __('There was an error displaying this event.', self::TEXT_DOMAIN)
+        );
       }
     }
 

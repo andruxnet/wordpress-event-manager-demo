@@ -18,6 +18,7 @@
 
   // define constants to be used throughout the plugin
   define('ANDRUXNET_PLUGIN_PATH', plugin_dir_path(__FILE__));
+  define('ANDRUXNET_PLUGIN_URL', plugin_dir_url(__FILE__));
 
   // initialize plugin
   add_Action('plugins_loaded', function() {
